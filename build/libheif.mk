@@ -11,14 +11,15 @@ $(PKG)_DEPS     := cc aom
 define $(PKG)_BUILD
     $(eval export CFLAGS += -O3)
     $(eval export CXXFLAGS += -O3)
+    # FindLIBDE265.cmake does not propagate the static-library definition.
+    $(if $(BUILD_STATIC),$(eval export CXXFLAGS += -DLIBDE265_STATIC_BUILD))
 
     cd '$(BUILD_DIR)' && $(TARGET)-cmake \
         -DENABLE_PLUGIN_LOADING=0 \
         -DBUILD_TESTING=0 \
         -DWITH_EXAMPLES=0 \
-        $(if $(IS_HEVC),, \
-            -DWITH_LIBDE265=0 \
-            -DWITH_X265=0) \
+        -DWITH_LIBDE265=$(if $(or $(IS_HEVC),$(IS_HEIC_DECODE)),1,0) \
+        -DWITH_X265=$(if $(IS_HEVC),1,0) \
         $(if $(and $(IS_JPEGLI),$(BUILD_STATIC)), -DCMAKE_CXX_FLAGS='$(CXXFLAGS) -DHAVE_JPEG_WRITE_ICC_PROFILE') \
         '$(SOURCE_DIR)'
     $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)'
